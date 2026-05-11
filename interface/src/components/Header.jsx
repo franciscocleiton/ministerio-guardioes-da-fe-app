@@ -1,3 +1,5 @@
+import minhaLogo from '/logo.png';
+
 export default function Header({ currentTab, setCurrentTab, isAdmin, setIsAdmin }) {
   return (
     <header className="bg-black border-b border-amber-900/50 sticky top-0 z-10 shadow-lg shadow-black">
@@ -7,7 +9,7 @@ export default function Header({ currentTab, setCurrentTab, isAdmin, setIsAdmin 
         <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left mb-6 md:mb-0">
           {/* Imagem puxada da pasta public */}
           <img 
-            src="/logo.png" 
+            src={minhaLogo}
             alt="Logo Ministério Guardiões da Fé" 
             className="w-20 h-20 md:w-24 md:h-24 object-cover border-amber-700/50 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
           />

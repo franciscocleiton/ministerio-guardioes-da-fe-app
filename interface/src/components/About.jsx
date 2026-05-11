@@ -1,3 +1,5 @@
+import grupo from '/grupo.jpeg';
+
 export default function About() {
   return (
     <div className="bg-neutral-900/80 border border-amber-900/30 p-6 md:p-10 rounded-lg shadow-2xl h-full">
@@ -6,7 +8,7 @@ export default function About() {
         <div className="w-24 h-1 bg-amber-700 mx-auto rounded mb-8"></div>
 
         <img 
-          src="/grupo.jpeg" // Caminho relativo à pasta public
+          src={grupo}
           alt="Foto do Grupo Ministério Guardiões da Fé" 
           className="w-full max-w-2xl mx-auto rounded-lg shadow-xl border-2 border-amber-900/50 mb-10 object-cover"
           // Adicionamos uma altura máxima para garantir que fique bem em qualquer tela, sem quebrar o layout

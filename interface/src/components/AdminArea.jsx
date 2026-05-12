@@ -18,6 +18,12 @@ export default function AdminArea({ isAdmin, setIsAdmin }) {
     status: 'confirmado'
   })
 
+  const [expandedId, setExpandedId] = useState(null);
+
+  const toggleDetails = (id) => {
+    setExpandedId(expandedId === id ? null : id);
+  };
+
   // --- EFEITO PARA BUSCAR DADOS (ATUALIZADO PARA SUPABASE) ---
   useEffect(() => {
     if (isAdmin) {
@@ -86,6 +92,70 @@ export default function AdminArea({ isAdmin, setIsAdmin }) {
       alert('Erro de conexão com o banco de dados.')
     }
   }
+
+  const handleAprovar = async (solic) => {
+    const confirmar = window.confirm(`Deseja aprovar o pedido de ${solic.nome_solicitante}?`);
+    if (!confirmar) return;
+
+    try {
+      // 1. Prepara os dados para a tabela 'eventos'
+      // Mapeamos os nomes das colunas da tabela de solicitações para a de eventos
+      const novoEventoData = {
+        tipo: solic.tipo_evento,
+        data: solic.data_evento,
+        hora: solic.horario.length === 5 ? solic.horario + ':00' : solic.horario,
+        local: solic.local || "Paróquia Cristo Rei", //
+        detalhes: `Solicitante: ${solic.nome_solicitante}. Obs: ${solic.detalhes || 'Sem observações'}`,
+        status: 'confirmado'
+      };
+
+      // 2. Insere na tabela de eventos
+      const { error: erroInsert } = await supabase
+        .from('eventos')
+        .insert([novoEventoData]);
+
+      if (erroInsert) throw erroInsert;
+
+      // 3. Se inseriu com sucesso, deleta da tabela de solicitações
+      const { error: erroDelete } = await supabase
+        .from('solicitacoes')
+        .delete()
+        .eq('id', solic.id);
+
+      if (erroDelete) throw erroDelete;
+
+      // 4. Atualiza a lista na tela para o card sumir
+      setSolicitacoes(prev => prev.filter(item => item.id !== solic.id));
+      alert('Solicitação aprovada e adicionada à agenda!');
+
+    } catch (error) {
+      console.error("Erro ao aprovar:", error);
+      alert('Erro ao processar aprovação.');
+    }
+  };
+
+  // --- FUNÇÃO PARA RECUSAR SOLICITAÇÃO ---
+  const handleRecusar = async (id) => {
+    const confirmar = window.confirm("Tem certeza que deseja recusar e excluir esta solicitação?");
+    if (!confirmar) return;
+
+    try {
+      const { error } = await supabase
+        .from('solicitacoes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Atualiza a lista na tela
+      setSolicitacoes(prev => prev.filter(item => item.id !== id));
+      alert('Solicitação removida.');
+
+    } catch (error) {
+      console.error("Erro ao recusar:", error);
+      alert('Erro ao excluir solicitação.');
+    }
+  };
 
   // TELA DE LOGIN
   if (!isAdmin) {
@@ -207,17 +277,71 @@ export default function AdminArea({ isAdmin, setIsAdmin }) {
                </p>
             ) : (
               solicitacoes.map((solic) => (
-                <div key={solic.id} className="p-4 bg-black border border-neutral-800 rounded">
-                  <p className="text-amber-400 font-bold text-sm">{solic.nome_solicitante} - {solic.tipo_evento}</p>
-                  <p className="text-neutral-400 text-xs mt-1">
-                    {new Date(solic.data_evento + 'T00:00:00').toLocaleDateString('pt-BR')} às {solic.horario.substring(0,5)}
-                  </p>
-                  {solic.detalhes && (
-                    <p className="text-neutral-500 text-xs mt-2 italic">"{solic.detalhes}"</p>
-                  )}
+                <div key={solic.id} className="p-4 bg-black border border-neutral-800 rounded transition-all">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-amber-400 font-bold text-sm">{solic.nome_solicitante} - {solic.tipo_evento}</p>
+                      <p className="text-neutral-400 text-xs mt-1">
+                        {new Date(solic.data_evento + 'T00:00:00').toLocaleDateString('pt-BR')} às {solic.horario.substring(0,5)}
+                      </p>
+                    </div>
+                  {/* Botão para expandir/recolher */}
+                  <button 
+                    onClick={() => toggleDetails(solic.id)}
+                    className="text-[10px] text-amber-600 hover:text-amber-500 underline uppercase tracking-tighter"
+                  >
+                    {expandedId === solic.id ? 'Fechar' : 'Ver Detalhes'}
+                  </button>
+                </div>
+
+                {/* ÁREA DE DETALHES EXPANSÍVEL */}
+                {expandedId === solic.id && (
+                  <div className="mt-4 p-4 bg-neutral-900/80 border border-amber-900/20 rounded-lg animate-in fade-in slide-in-from-top-1">
+                    <h4 className="text-xs font-bold text-amber-500 uppercase tracking-widest mb-3 border-b border-amber-900/30 pb-1">
+                      Resumo da Solicitação
+                    </h4>
+                    
+                    <div className="grid grid-cols-1 gap-y-2 text-sm">
+                      <div className="flex justify-between border-b border-neutral-800 pb-1">
+                        <span className="text-neutral-500">Data:</span>
+                        <span className="text-neutral-200 font-medium">
+                          {new Date(solic.data_evento + 'T00:00:00').toLocaleDateString('pt-BR')}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between border-b border-neutral-800 pb-1">
+                        <span className="text-neutral-500">Horário:</span>
+                        <span className="text-neutral-200 font-medium">{solic.horario.substring(0, 5)}h</span>
+                      </div>
+
+                      <div className="flex justify-between border-b border-neutral-800 pb-1">
+                        <span className="text-neutral-500">Local Previsto:</span>
+                        <span className="text-amber-200/70 italic">{solic.local || "Local não especificado"}</span>
+                      </div>
+
+                      <div className="mt-2">
+                        <span className="text-neutral-500 block mb-1">Observações do Solicitante:</span>
+                        <div className="p-2 bg-black/50 rounded text-neutral-300 italic text-xs leading-relaxed">
+                          {solic.detalhes || "Nenhuma observação adicional."}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                   <div className="flex gap-2 mt-3">
-                    <button className="text-xs bg-green-900/40 text-green-400 px-2 py-1 rounded hover:bg-green-900/60 border border-green-900/50">Aprovar</button>
-                    <button className="text-xs bg-red-900/40 text-red-400 px-2 py-1 rounded hover:bg-red-900/60 border border-red-900/50">Recusar</button>
+                    <button 
+                      onClick={() => handleAprovar(solic)}
+                      className="text-xs bg-green-900/40 text-green-400 px-2 py-1 rounded hover:bg-green-900/60 border border-green-900/50"
+                    >
+                      Aprovar
+                    </button>
+                    
+                    <button 
+                      onClick={() => handleRecusar(solic.id)}
+                      className="text-xs bg-red-900/40 text-red-400 px-2 py-1 rounded hover:bg-red-900/60 border border-red-900/50"
+                    >
+                      Recusar
+                    </button>
                   </div>
                 </div>
               ))

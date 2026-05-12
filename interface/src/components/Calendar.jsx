@@ -9,10 +9,13 @@ export default function Calendar() {
   useEffect(() => {
     const buscarEventos = async () => {
       try {
-        // SELECT direto na tabela eventos, ordenado da data mais próxima para a mais distante
+        // 1. Pegamos a data de hoje no formato YYYY-MM-DD (horário local)
+        const hoje = new Date().toLocaleDateString('en-CA');
+        // 2. Adicionamos o filtro .gte (Greater Than or Equal)
         const { data, error } = await supabase
           .from('eventos')
           .select('*')
+          .gte('data', hoje) // <-- TRADUÇÃO: "data maior ou igual a hoje"
           .order('data', { ascending: true });
 
         if (error) throw error;
@@ -27,7 +30,7 @@ export default function Calendar() {
 
     buscarEventos();
   }, []);
-
+  
   // Função para formatar a data (Ex: "10 de Maio, Domingo")
   const formatarData = (dataString) => {
     const data = new Date(dataString + 'T00:00:00'); // Força fuso horário local

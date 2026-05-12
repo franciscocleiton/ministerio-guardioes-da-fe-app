@@ -28,8 +28,30 @@ export default function ServiceForm() {
         .insert([dadosParaEnvio])
 
       if (!error) {
-        alert('Solicitação enviada com sucesso! O Ministério entrará em contato.')
-        // Limpa o formulário, agora incluindo o local
+        // --- INÍCIO DA LÓGICA DO WHATSAPP ---
+        
+        // Formata a data para ficar bonita na mensagem (DD/MM/AAAA)
+        const dataFormatada = new Date(formData.data_evento + 'T00:00:00').toLocaleDateString('pt-BR');
+        
+        const mensagem = `*NOVA SOLICITAÇÃO - APP GUARDIÕES*%0A%0A` +
+          `*De:* ${formData.nome_solicitante}%0A` +
+          `*Evento:* ${formData.tipo_evento}%0A` +
+          `*Local:* ${formData.local}%0A` +
+          `*Data:* ${dataFormatada}%0A` +
+          `*Hora:* ${formData.horario}h%0A` +
+          `*Detalhes:* ${formData.detalhes || 'Sem detalhes'}`;
+
+        // Substitua pelo número da coordenação (com DDD e sem espaços)
+        const numeroCoordenacao = "+5585989234207"; 
+        
+        // Abre o WhatsApp em uma nova aba
+        window.open(`https://api.whatsapp.com/send?phone=${numeroCoordenacao}&text=${mensagem}`, '_blank');
+        
+        // --- FIM DA LÓGICA DO WHATSAPP ---
+
+        alert('Solicitação enviada e redirecionando para o WhatsApp da coordenação!');
+        
+        // Limpa o formulário
         setFormData({
           nome_solicitante: '',
           data_evento: '',
@@ -40,7 +62,7 @@ export default function ServiceForm() {
         })
       } else {
         console.error("Erro do Supabase:", error)
-        alert('Erro ao enviar a solicitação. Verifique os dados e tente novamente.')
+        alert('Erro ao enviar a solicitação.')
       }
     } catch (error) {
       console.error("Erro inesperado:", error)

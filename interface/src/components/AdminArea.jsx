@@ -315,7 +315,7 @@ export default function AdminArea({ isAdmin, setIsAdmin }) {
                       </div>
 
                       <div className="flex justify-between border-b border-neutral-800 pb-1">
-                        <span className="text-neutral-500">Local Previsto:</span>
+                        <span className="text-neutral-500">Local:</span>
                         <span className="text-amber-200/70 italic">{solic.local || "Local não especificado"}</span>
                       </div>
 
